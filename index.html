@@ -1,1444 +1,226 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Trading Calculator (UAH ₴ / USDT)</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#090d16',
-                        cardBg: '#111827',
-                        cardBorder: '#1f2937',
-                        accentGreen: '#10b981',
-                        accentRed: '#ef4444',
-                        accentBlue: '#3b82f6',
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- QR Code Generator -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #090d16;
-            color: #f3f4f6;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0d1322;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1f2937;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #374151;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P2P Calculator UAH ₴ / USDT</title>
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .card-bg {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+    }
+    .input-style {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      outline: none;
+    }
+    .input-style:focus {
+      border-color: #3b82f6;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+<body class="min-h-screen pb-12">
 
-    <!-- Header & Storage / Cloud Controls -->
-    <header class="border-b border-cardBorder bg-cardBg/90 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-                    <i class="fa-solid fa-arrow-right-arrow-left text-white text-lg"></i>
-                </div>
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <h1 class="font-bold text-base sm:text-lg tracking-tight text-white leading-tight">P2P Pro UAH</h1>
-                        <span id="syncBadge" class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span id="syncBadgeText">Локально</span>
-                        </span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 hidden sm:block">Учет Гривни (₴) и USDT с синхронизацией ПК + Телефон</p>
-                </div>
-            </div>
-
-            <!-- Sync & Data Controls -->
-            <div class="flex items-center space-x-1 sm:space-x-2">
-                <button onclick="openSyncModal()" class="px-2.5 sm:px-3 py-1.5 text-xs font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition border border-emerald-500/30 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
-                    <span class="hidden sm:inline">Облако / Синхронизация</span>
-                    <span class="sm:hidden">Облако</span>
-                </button>
-
-                <button onclick="exportBackup()" title="Скачать бэкап" class="p-2 sm:px-3 sm:py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition border border-slate-700 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-download"></i>
-                    <span class="hidden md:inline">Бэкап</span>
-                </button>
-                <button onclick="document.getElementById('importFileInput').click()" title="Загрузить бэкап" class="p-2 sm:px-3 sm:py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition border border-slate-700 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-upload"></i>
-                    <span class="hidden md:inline">Импорт</span>
-                </button>
-                <input type="file" id="importFileInput" onchange="importBackup(event)" accept=".json" class="hidden">
-
-                <button onclick="confirmResetAll()" title="Сбросить все данные" class="p-2 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition border border-red-500/20">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>
+  <!-- HEADER -->
+  <header class="card-bg border-b border-slate-700 sticky top-0 z-50 backdrop-blur-md bg-slate-900/90 px-4 py-3">
+    <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-2">
+        <div class="p-2 bg-blue-600 rounded-lg">
+          <i data-lucide="calculator" class="w-5 h-5 text-white"></i>
         </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
-
-        <!-- Active Sync Status Banner (if synced) -->
-        <div id="syncActiveBanner" class="hidden bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-emerald-300">
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-cloud-check text-emerald-400 text-sm"></i>
-                <span>Облачная синхронизация активна. ID: <strong id="bannerSyncId" class="font-mono text-white"></strong></span>
-            </div>
-            <button onclick="openSyncModal()" class="underline hover:text-white text-[11px]">Настройки</button>
+        <div>
+          <h1 class="font-bold text-lg leading-none">P2P Calc <span class="text-xs font-semibold px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">UAH / USDT</span></h1>
+          <span class="text-xs text-slate-400">Калькулятор и учет арбитража</span>
         </div>
+      </div>
 
-        <!-- Top Overview: PnL Cards & Portfolio Balance -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <!-- Day Profit -->
-            <div class="bg-cardBg border border-cardBorder p-4 rounded-2xl relative overflow-hidden">
-                <div class="flex justify-between items-center text-slate-400 text-xs font-medium mb-1">
-                    <span>Прибыль за День</span>
-                    <i class="fa-regular fa-calendar-day text-blue-400"></i>
-                </div>
-                <div id="pnlDayText" class="text-2xl font-bold tracking-tight text-emerald-400">0.00 ₴</div>
-                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Сделок: <strong id="pnlDayCount" class="text-white">0</strong></span>
-                    <span>Оборот: <strong id="pnlDayVol" class="text-slate-300">0 ₴</strong></span>
-                </div>
-            </div>
+      <!-- Sync Status & Cloud Account Button -->
+      <div class="flex items-center gap-2">
+        <button onclick="openSyncModal()" id="syncBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">
+          <span id="syncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span id="syncText">Локально</span>
+          <i data-lucide="cloud" class="w-3.5 h-3.5 ml-1"></i>
+        </button>
 
-            <!-- Week Profit -->
-            <div class="bg-cardBg border border-cardBorder p-4 rounded-2xl relative overflow-hidden">
-                <div class="flex justify-between items-center text-slate-400 text-xs font-medium mb-1">
-                    <span>Прибыль за Неделю</span>
-                    <i class="fa-regular fa-calendar-week text-emerald-400"></i>
-                </div>
-                <div id="pnlWeekText" class="text-2xl font-bold tracking-tight text-emerald-400">0.00 ₴</div>
-                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Сделок: <strong id="pnlWeekCount" class="text-white">0</strong></span>
-                    <span>Оборот: <strong id="pnlWeekVol" class="text-slate-300">0 ₴</strong></span>
-                </div>
-            </div>
+        <button onclick="exportData()" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition" title="Скачать бэкап">
+          <i data-lucide="download" class="w-4 h-4"></i>
+        </button>
+        <label class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition cursor-pointer" title="Загрузить бэкап">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          <input type="file" id="importFile" onchange="importData(event)" class="hidden" accept=".json">
+        </label>
+      </div>
+    </div>
+  </header>
 
-            <!-- Month Profit -->
-            <div class="bg-cardBg border border-cardBorder p-4 rounded-2xl relative overflow-hidden">
-                <div class="flex justify-between items-center text-slate-400 text-xs font-medium mb-1">
-                    <span>Прибыль за Месяц</span>
-                    <i class="fa-regular fa-calendar-days text-purple-400"></i>
-                </div>
-                <div id="pnlMonthText" class="text-2xl font-bold tracking-tight text-emerald-400">0.00 ₴</div>
-                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Сделок: <strong id="pnlMonthCount" class="text-white">0</strong></span>
-                    <span>Оборот: <strong id="pnlMonthVol" class="text-slate-300">0 ₴</strong></span>
-                </div>
-            </div>
+  <main class="max-w-5xl mx-auto px-4 mt-6 space-y-6">
 
-            <!-- Total Crypto Portfolio -->
-            <div class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/80 p-4 rounded-2xl relative overflow-hidden">
-                <div class="flex justify-between items-center text-slate-300 text-xs font-medium mb-1">
-                    <span>Крипто-баланс (USDT)</span>
-                    <span class="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">USDT</span>
-                </div>
-                <div class="flex items-baseline space-x-2">
-                    <span id="totalUsdtText" class="text-2xl font-bold tracking-tight text-white">0.00</span>
-                    <span class="text-xs text-amber-400 font-semibold">USDT</span>
-                </div>
-                <div class="mt-2 text-[11px] text-slate-400 flex justify-between items-center">
-                    <span>Средняя цена покупки:</span>
-                    <span id="avgBuyPriceText" class="font-bold text-slate-200">0.00 ₴</span>
-                </div>
-            </div>
+    <!-- TOP CARDS: BALANCES & COST BASIS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Total UAH Cards -->
+      <div class="card-bg p-4 rounded-xl flex flex-col justify-between">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-xs font-semibold text-slate-400 uppercase">Фиат на картах (₴)</span>
+          <button onclick="openCardModal()" class="text-xs text-blue-400 hover:underline flex items-center gap-1">
+            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Управление
+          </button>
         </div>
-
-        <!-- Section: Cards & Wallet Balances -->
-        <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 sm:p-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-cardBorder pb-3">
-                <div>
-                    <h2 class="text-base font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-credit-card text-blue-400"></i>
-                        <span>Карты и Банковские Балансы (UAH ₴)</span>
-                    </h2>
-                    <p class="text-xs text-slate-400">Управляйте балансами карт. Общий баланс: <strong id="totalUahCardsBalance" class="text-emerald-400 font-bold">0.00 ₴</strong></p>
-                </div>
-                <button onclick="openAddCardModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-xl transition flex items-center space-x-1.5 self-start sm:self-auto">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Добавить карту</span>
-                </button>
-            </div>
-
-            <!-- Cards Grid -->
-            <div id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                <!-- Rendered dynamically -->
-            </div>
+        <div>
+          <div class="text-2xl font-extrabold text-emerald-400" id="totalUahDisplay">0 ₴</div>
+          <div class="text-xs text-slate-400 mt-1" id="cardsCountDisplay">0 карт(ы)</div>
         </div>
+      </div>
 
-        <!-- Section: Calculator & Trade Entry -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            <!-- Left Side: Calculator Tabs (7 Cols) -->
-            <div class="lg:col-span-7 bg-cardBg border border-cardBorder rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-                <div>
-                    <!-- Tabs Navigation -->
-                    <div class="flex space-x-2 border-b border-cardBorder pb-3 mb-5">
-                        <button onclick="switchTab('buy')" id="tabBtnBuy" class="px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl transition flex-1 flex items-center justify-center space-x-1.5 bg-blue-600 text-white">
-                            <i class="fa-solid fa-cart-shopping"></i>
-                            <span>1. Покупка</span>
-                        </button>
-                        <button onclick="switchTab('sell')" id="tabBtnSell" class="px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl transition flex-1 flex items-center justify-center space-x-1.5 bg-slate-800 text-slate-400 hover:text-white">
-                            <i class="fa-solid fa-coins"></i>
-                            <span>2. Продажа</span>
-                        </button>
-                        <button onclick="switchTab('bundle')" id="tabBtnBundle" class="px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl transition flex-1 flex items-center justify-center space-x-1.5 bg-slate-800 text-slate-400 hover:text-white">
-                            <i class="fa-solid fa-arrows-spin"></i>
-                            <span>3. Круг</span>
-                        </button>
-                    </div>
-
-                    <!-- TAB 1: BUY USDT -->
-                    <div id="tabContentBuy" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Выберите Карту</label>
-                                <select id="buyCardSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                                    <!-- Dynamic options -->
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Сумма Покупки (₴ UAH)</label>
-                                <input type="number" id="buyUahAmount" placeholder="10000" oninput="recalcBuy()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Курс Покупки (₴/USDT)</label>
-                                <input type="number" step="0.01" id="buyRate" placeholder="41.20" oninput="recalcBuy()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                            
-                            <!-- Bank Fee with Toggle (UAH / %) -->
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="block text-xs font-medium text-slate-400">Комиссия Банка</label>
-                                    <div class="flex bg-slate-800 rounded-lg p-0.5 text-[10px]">
-                                        <button onclick="setBankFeeType('buy', 'uah')" id="buyBankFeeTypeUah" class="px-2 py-0.5 rounded-md font-bold bg-blue-600 text-white">₴</button>
-                                        <button onclick="setBankFeeType('buy', 'pct')" id="buyBankFeeTypePct" class="px-2 py-0.5 rounded-md text-slate-400">%</button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <input type="number" step="0.1" id="buyBankFee" value="0" oninput="recalcBuy()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 pr-8">
-                                    <span id="buyBankFeeUnit" class="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">₴</span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Комиссия Биржи (%)</label>
-                                <input type="number" step="0.1" id="buyExFee" value="0.0" oninput="recalcBuy()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                        </div>
-
-                        <!-- Live Calculation Summary Box -->
-                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-2 text-xs">
-                            <div class="flex justify-between text-slate-400">
-                                <span>Всего списано с карты:</span>
-                                <span id="buyTotalSpentText" class="font-bold text-white">0.00 ₴</span>
-                            </div>
-                            <div class="flex justify-between text-slate-400">
-                                <span>Получено USDT на баланс:</span>
-                                <span id="buyNetUsdtText" class="font-bold text-emerald-400">0.00 USDT</span>
-                            </div>
-                            <div class="flex justify-between text-slate-400 border-t border-slate-800 pt-2">
-                                <span>Себестоимость покупки:</span>
-                                <span id="buyEffectiveRateText" class="font-bold text-amber-400">0.00 ₴/USDT</span>
-                            </div>
-                        </div>
-
-                        <button onclick="executeBuy()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>Зафиксировать Покупку USDT</span>
-                        </button>
-                    </div>
-
-                    <!-- TAB 2: SELL USDT -->
-                    <div id="tabContentSell" class="space-y-4 hidden">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Зачислить на Карту</label>
-                                <select id="sellCardSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                                    <!-- Dynamic options -->
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Продать USDT (кол-во)</label>
-                                <input type="number" id="sellUsdtAmount" placeholder="250" oninput="recalcSell()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Курс Продажи (₴/USDT)</label>
-                                <input type="number" step="0.01" id="sellRate" placeholder="41.80" oninput="recalcSell()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Комиссия Биржи (%)</label>
-                                <input type="number" step="0.1" id="sellExFee" value="0.0" oninput="recalcSell()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                            
-                            <!-- Bank Fee with Toggle (UAH / %) -->
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="block text-xs font-medium text-slate-400">Комиссия Карты</label>
-                                    <div class="flex bg-slate-800 rounded-lg p-0.5 text-[10px]">
-                                        <button onclick="setBankFeeType('sell', 'uah')" id="sellBankFeeTypeUah" class="px-2 py-0.5 rounded-md font-bold bg-blue-600 text-white">₴</button>
-                                        <button onclick="setBankFeeType('sell', 'pct')" id="sellBankFeeTypePct" class="px-2 py-0.5 rounded-md text-slate-400">%</button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <input type="number" step="0.1" id="sellBankFee" value="0" oninput="recalcSell()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 pr-8">
-                                    <span id="sellBankFeeUnit" class="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">₴</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Live Calculation Summary Box -->
-                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-2 text-xs">
-                            <div class="flex justify-between text-slate-400">
-                                <span>Чистая выручка в UAH:</span>
-                                <span id="sellNetUahText" class="font-bold text-white">0.00 ₴</span>
-                            </div>
-                            <div class="flex justify-between text-slate-400">
-                                <span>Себестоимость (Cost Basis):</span>
-                                <span id="sellCostBasisText" class="font-bold text-slate-300">0.00 ₴</span>
-                            </div>
-                            <div class="flex justify-between text-slate-400 border-t border-slate-800 pt-2">
-                                <span>Расчетная Прибыль / Убыток:</span>
-                                <span id="sellPnlText" class="font-bold text-emerald-400 text-sm">0.00 ₴ (0.00%)</span>
-                            </div>
-                        </div>
-
-                        <button onclick="executeSell()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>Зафиксировать Продажу USDT</span>
-                        </button>
-                    </div>
-
-                    <!-- TAB 3: FULL BUNDLE / CYCLE -->
-                    <div id="tabContentBundle" class="space-y-4 hidden">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Списание (Карта 1)</label>
-                                <select id="bundleCardFrom" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                                    <!-- Dynamic options -->
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Зачисление (Карта 2)</label>
-                                <select id="bundleCardTo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                                    <!-- Dynamic options -->
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Стартовый Капитал (₴)</label>
-                                <input type="number" id="bundleStartUah" placeholder="10000" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Курс Покупки (₴)</label>
-                                <input type="number" step="0.01" id="bundleBuyRate" placeholder="41.20" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Курс Продажи (₴)</label>
-                                <input type="number" step="0.01" id="bundleSellRate" placeholder="41.85" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                            </div>
-                        </div>
-
-                        <!-- Bundle Bank Fees Input Grid -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="block text-[11px] font-medium text-slate-400">Комиссия Банк Закуп</label>
-                                    <div class="flex bg-slate-800 rounded p-0.5 text-[9px]">
-                                        <button onclick="setBankFeeType('bundleBuy', 'uah')" id="bundleBuyBankFeeTypeUah" class="px-1.5 py-0.2 rounded font-bold bg-blue-600 text-white">₴</button>
-                                        <button onclick="setBankFeeType('bundleBuy', 'pct')" id="bundleBuyBankFeeTypePct" class="px-1.5 py-0.2 rounded text-slate-400">%</button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <input type="number" step="0.1" id="bundleBuyBankFee" value="0" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white pr-6">
-                                    <span id="bundleBuyBankFeeUnit" class="absolute right-2 top-2 text-[10px] text-slate-400 font-bold">₴</span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-medium text-slate-400 mb-1">Биржа Закуп (%)</label>
-                                <input type="number" step="0.1" id="bundleBuyExFee" value="0.0" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white">
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-medium text-slate-400 mb-1">Биржа Продажа (%)</label>
-                                <input type="number" step="0.1" id="bundleSellExFee" value="0.0" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white">
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="block text-[11px] font-medium text-slate-400">Комиссия Банк Продажа</label>
-                                    <div class="flex bg-slate-800 rounded p-0.5 text-[9px]">
-                                        <button onclick="setBankFeeType('bundleSell', 'uah')" id="bundleSellBankFeeTypeUah" class="px-1.5 py-0.2 rounded font-bold bg-blue-600 text-white">₴</button>
-                                        <button onclick="setBankFeeType('bundleSell', 'pct')" id="bundleSellBankFeeTypePct" class="px-1.5 py-0.2 rounded text-slate-400">%</button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <input type="number" step="0.1" id="bundleSellBankFee" value="0" oninput="recalcBundle()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white pr-6">
-                                    <span id="bundleSellBankFeeUnit" class="absolute right-2 top-2 text-[10px] text-slate-400 font-bold">₴</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Live Calculation Summary Box -->
-                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-2 text-xs">
-                            <div class="flex justify-between text-slate-400">
-                                <span>Промежуточный объём USDT:</span>
-                                <span id="bundleUsdtObtainedText" class="font-bold text-amber-400">0.00 USDT</span>
-                            </div>
-                            <div class="flex justify-between text-slate-400">
-                                <span>Итоговое зачисление в ₴:</span>
-                                <span id="bundleFinalUahText" class="font-bold text-white">0.00 ₴</span>
-                            </div>
-                            <div class="flex justify-between text-slate-400 border-t border-slate-800 pt-2">
-                                <span>Чистый спред и прибыль:</span>
-                                <span id="bundlePnlText" class="font-bold text-emerald-400 text-sm">0.00 ₴ (+0.00%)</span>
-                            </div>
-                        </div>
-
-                        <button onclick="executeBundle()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-purple-600/20 flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-arrows-spin"></i>
-                            <span>Провести Полный Круг</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Side: Analytics & Portfolio Overview (5 Cols) -->
-            <div class="lg:col-span-5 bg-cardBg border border-cardBorder rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4">
-                <div>
-                    <h3 class="text-sm font-bold text-white flex items-center space-x-2 border-b border-cardBorder pb-3 mb-4">
-                        <i class="fa-solid fa-chart-pie text-emerald-400"></i>
-                        <span>Аналитика и Сводка</span>
-                    </h3>
-
-                    <div class="space-y-3 text-xs">
-                        <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                            <span class="text-slate-400">Всего сделок за всё время:</span>
-                            <span id="statTotalTrades" class="font-bold text-white text-sm">0</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                            <span class="text-slate-400">Всего куплено USDT:</span>
-                            <span id="statTotalUsdtBought" class="font-bold text-emerald-400 text-sm">0.00 USDT</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                            <span class="text-slate-400">Всего продано USDT:</span>
-                            <span id="statTotalUsdtSold" class="font-bold text-blue-400 text-sm">0.00 USDT</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                            <span class="text-slate-400">Общая чистая прибыль (PnL):</span>
-                            <span id="statTotalAllTimePnl" class="font-bold text-emerald-400 text-sm">0.00 ₴</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sync Quick Help Box -->
-                <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 space-y-1">
-                    <p class="font-semibold flex items-center gap-1.5">
-                        <i class="fa-solid fa-mobile-screen-button"></i>
-                        <span>Как подключить телефон?</span>
-                    </p>
-                    <p class="text-[11px] text-slate-300 leading-relaxed">
-                        Нажмите кнопку <strong>«Облако»</strong> вверху, отсканируйте QR-код телефоном или введите полученный Sync ID. Все данные будут синхронизироваться автоматически в реальном времени!
-                    </p>
-                </div>
-            </div>
+      <!-- USDT Balance -->
+      <div class="card-bg p-4 rounded-xl flex flex-col justify-between">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-xs font-semibold text-slate-400 uppercase">Баланс USDT</span>
+          <span class="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700">Биржа/Кошелек</span>
         </div>
-
-        <!-- Section: Interactive Transaction History Table -->
-        <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 sm:p-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-cardBorder pb-3">
-                <div>
-                    <h2 class="text-base font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-clock-rotate-left text-purple-400"></i>
-                        <span>История Операций</span>
-                    </h2>
-                    <p class="text-xs text-slate-400">Автоматически сохраняется локально и в облаке</p>
-                </div>
-                <button onclick="clearHistory()" class="px-3 py-1.5 text-xs text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500 rounded-xl transition border border-red-500/20 flex items-center space-x-1.5 self-start sm:self-auto">
-                    <i class="fa-solid fa-eraser"></i>
-                    <span>Очистить историю</span>
-                </button>
-            </div>
-
-            <!-- Responsive Table Container -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-900/80 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-cardBorder">
-                        <tr>
-                            <th class="py-3 px-3 sm:px-4">Время</th>
-                            <th class="py-3 px-3 sm:px-4">Тип</th>
-                            <th class="py-3 px-3 sm:px-4">Карта / Маршрут</th>
-                            <th class="py-3 px-3 sm:px-4">Сумма UAH (₴)</th>
-                            <th class="py-3 px-3 sm:px-4">USDT</th>
-                            <th class="py-3 px-3 sm:px-4">Курсы</th>
-                            <th class="py-3 px-3 sm:px-4 text-right">Прибыль (PnL)</th>
-                            <th class="py-3 px-3 sm:px-4 text-center">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody" class="divide-y divide-cardBorder">
-                        <!-- Dynamic rows -->
-                    </tbody>
-                </table>
-            </div>
+        <div>
+          <div class="text-2xl font-extrabold text-blue-400" id="usdtBalanceDisplay">0.00 USDT</div>
+          <div class="text-xs text-slate-400 mt-1">
+            Оценка: <span id="usdtInUahDisplay" class="text-slate-200">0 ₴</span>
+          </div>
         </div>
-    </main>
+      </div>
 
-    <!-- Modal: Add / Edit Card -->
-    <div id="cardModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-cardBg border border-cardBorder rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-cardBorder pb-3">
-                <h3 class="font-bold text-white text-base">Добавить Гривневую Карту</h3>
-                <button onclick="closeAddCardModal()" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-medium text-slate-400 mb-1">Название карты / Банка</label>
-                    <input type="text" id="modalCardName" placeholder="например, Monobank, PrivatBank..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block font-medium text-slate-400 mb-1">Начальный Баланс (₴ UAH)</label>
-                    <input type="number" id="modalCardBalance" placeholder="50000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeAddCardModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 rounded-xl transition">Отмена</button>
-                <button onclick="saveNewCard()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition">Сохранить</button>
-            </div>
+      <!-- Average Cost Basis (Себестоимость) -->
+      <div class="card-bg p-4 rounded-xl flex flex-col justify-between">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-xs font-semibold text-slate-400 uppercase">Средняя Себестоимость</span>
+          <i data-lucide="info" class="w-4 h-4 text-slate-500" title="Учитывает курс покупки и все комиссии"></i>
         </div>
+        <div>
+          <div class="text-2xl font-extrabold text-amber-400" id="avgBuyPriceDisplay">0.00 ₴</div>
+          <div class="text-xs text-slate-400 mt-1">Себестоимость 1 USDT с учетом комиссий</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Modal: Cloud Sync & Device Pairing -->
-    <div id="syncModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-cardBg border border-cardBorder rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-cardBorder pb-3">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                        <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
-                    </div>
-                    <h3 class="font-bold text-white text-base">Синхронизация ПК + Телефон</h3>
-                </div>
-                <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- Sync ID Input & Action Buttons -->
-            <div class="space-y-4 text-xs">
-                <div>
-                    <label class="block font-medium text-slate-300 mb-1">Ваш Уникальный Sync ID Аккаунта:</label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="syncIdInput" placeholder="например: p2p_usr_9a8b7c6d" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono text-emerald-400 focus:outline-none focus:border-emerald-500">
-                        <button onclick="copySyncId()" title="Скопировать ID" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition shrink-0 flex items-center space-x-1">
-                            <i class="fa-solid fa-copy"></i>
-                            <span class="hidden sm:inline">Копировать</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <button onclick="connectExistingSyncId()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg shadow-emerald-600/20">
-                        <i class="fa-solid fa-link"></i>
-                        <span>Подключить этот Sync ID</span>
-                    </button>
-                    <button onclick="createNewSyncId()" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl text-xs transition flex items-center justify-center space-x-1.5">
-                        <i class="fa-solid fa-rotate"></i>
-                        <span>Создать новый ID</span>
-                    </button>
-                </div>
-
-                <!-- QR Code Box -->
-                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center space-y-3">
-                    <span class="text-slate-400 text-[11px] text-center">Отсканируйте этот QR-код камерой телефона, чтобы мгновенно подключить облачную синхронизацию:</span>
-                    <div id="qrcodeContainer" class="bg-white p-3 rounded-xl shadow-md min-h-[128px] min-w-[128px] flex items-center justify-center">
-                        <!-- QR Code Canvas rendered here -->
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-between items-center pt-2 border-t border-cardBorder text-xs text-slate-400">
-                <span id="syncModalStatus">Статус: Не подключено</span>
-                <button onclick="closeSyncModal()" class="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition">Закрыть</button>
-            </div>
-        </div>
+    <!-- PnL SUMMARY CARDS (Day, Week, Month) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="card-bg p-4 rounded-xl border-l-4 border-l-blue-500">
+        <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Прибыль за День</div>
+        <div class="text-2xl font-black" id="pnlDay">0 ₴</div>
+        <div class="text-xs text-slate-400 mt-1" id="tradesDay">Сделок: 0</div>
+      </div>
+      <div class="card-bg p-4 rounded-xl border-l-4 border-l-indigo-500">
+        <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Прибыль за Неделю</div>
+        <div class="text-2xl font-black" id="pnlWeek">0 ₴</div>
+        <div class="text-xs text-slate-400 mt-1" id="tradesWeek">Сделок: 0</div>
+      </div>
+      <div class="card-bg p-4 rounded-xl border-l-4 border-l-purple-500">
+        <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Прибыль за Месяц</div>
+        <div class="text-2xl font-black" id="pnlMonth">0 ₴</div>
+        <div class="text-xs text-slate-400 mt-1" id="tradesMonth">Сделок: 0</div>
+      </div>
     </div>
 
-    <!-- Application JavaScript Logic -->
-    <script>
-        // Default persistent state structure
-        const DEFAULT_STATE = {
-            cards: [
-                { id: 'c1', name: 'Monobank ₴', balance: 50000 },
-                { id: 'c2', name: 'PrivatBank ₴', balance: 30000 },
-                { id: 'c3', name: 'Sense Bank ₴', balance: 20000 }
-            ],
-            usdtBalance: 0,
-            avgBuyPrice: 0, // Weighted average cost basis in UAH per 1 USDT
-            transactions: [],
-            syncId: ''
-        };
-
-        // Application State
-        let appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        let activeTab = 'buy';
-        let syncTimer = null;
-        let isSyncing = false;
-
-        // Fee Type Switches ('uah' or 'pct')
-        const feeTypes = {
-            buyBank: 'uah',
-            sellBank: 'uah',
-            bundleBuyBank: 'uah',
-            bundleSellBank: 'uah'
-        };
-
-        // Cloud Relay Endpoint (Free Public Key-Value Storage Relay)
-        const CLOUD_API_BASE = 'https://kvdb.io/6M3HwzZ7r6J8gqFf2249n2/';
-
-        // Load state from LocalStorage immediately
-        function loadState() {
-            try {
-                const saved = localStorage.getItem('p2p_calc_uah_state');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    appState = { ...DEFAULT_STATE, ...parsed };
-                }
-            } catch (e) {
-                console.error('Failed to load LocalStorage', e);
-            }
-        }
-
-        // Save state to LocalStorage and trigger cloud push
-        function saveState(skipCloudPush = false) {
-            try {
-                localStorage.setItem('p2p_calc_uah_state', JSON.stringify(appState));
-            } catch (e) {
-                console.error('Failed to save to LocalStorage', e);
-            }
-            renderAll();
-
-            if (!skipCloudPush && appState.syncId) {
-                pushStateToCloud();
-            }
-        }
-
-        // Toggle Bank Fee Mode (UAH / %)
-        function setBankFeeType(field, type) {
-            feeTypes[field + 'Bank'] = type;
-
-            const uahBtn = document.getElementById(`${field}BankFeeTypeUah`);
-            const pctBtn = document.getElementById(`${field}BankFeeTypePct`);
-            const unitEl = document.getElementById(`${field}BankFeeUnit`);
-
-            if (type === 'uah') {
-                uahBtn.className = 'px-2 py-0.5 rounded-md font-bold bg-blue-600 text-white';
-                pctBtn.className = 'px-2 py-0.5 rounded-md text-slate-400';
-                if (unitEl) unitEl.innerText = '₴';
-            } else {
-                pctBtn.className = 'px-2 py-0.5 rounded-md font-bold bg-blue-600 text-white';
-                uahBtn.className = 'px-2 py-0.5 rounded-md text-slate-400';
-                if (unitEl) unitEl.innerText = '%';
-            }
-
-            if (field === 'buy') recalcBuy();
-            if (field === 'sell') recalcSell();
-            if (field === 'bundle' || field === 'bundleBuy' || field === 'bundleSell') recalcBundle();
-        }
-
-        // Init App
-        window.addEventListener('DOMContentLoaded', () => {
-            loadState();
-
-            // Check URL query for Sync ID (from QR code scan)
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlSyncId = urlParams.get('syncId');
-            if (urlSyncId) {
-                appState.syncId = urlSyncId;
-                saveState(true);
-            }
-
-            renderAll();
-
-            if (appState.syncId) {
-                startCloudPolling();
-            }
-        });
-
-        // Tab Switcher
-        function switchTab(tab) {
-            activeTab = tab;
-            ['buy', 'sell', 'bundle'].forEach(t => {
-                const btn = document.getElementById(`tabBtn${capitalize(t)}`);
-                const content = document.getElementById(`tabContent${capitalize(t)}`);
-                if (t === tab) {
-                    btn.className = 'px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl transition flex-1 flex items-center justify-center space-x-1.5 bg-blue-600 text-white shadow-lg shadow-blue-600/20';
-                    content.classList.remove('hidden');
-                } else {
-                    btn.className = 'px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl transition flex-1 flex items-center justify-center space-x-1.5 bg-slate-800 text-slate-400 hover:text-white';
-                    content.classList.add('hidden');
-                }
-            });
-        }
-
-        function capitalize(s) {
-            return s.charAt(0).toUpperCase() + s.slice(1);
-        }
-
-        // Render All UI Sections
-        function renderAll() {
-            renderCards();
-            renderCardDropdowns();
-            renderSummaryCards();
-            renderHistory();
-            renderAnalytics();
-            updateSyncBanner();
-
-            document.getElementById('totalUsdtText').innerText = formatNum(appState.usdtBalance, 2);
-            document.getElementById('avgBuyPriceText').innerText = formatNum(appState.avgBuyPrice, 2) + ' ₴';
-
-            recalcBuy();
-            recalcSell();
-            recalcBundle();
-        }
-
-        // Render Cards
-        function renderCards() {
-            const container = document.getElementById('cardsContainer');
-            container.innerHTML = '';
-
-            let totalUah = 0;
-            appState.cards.forEach(card => {
-                totalUah += Number(card.balance || 0);
-                const cardEl = document.createElement('div');
-                cardEl.className = 'bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between space-y-2';
-                cardEl.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-medium text-xs text-slate-200">${escapeHtml(card.name)}</span>
-                        <button onclick="deleteCard('${card.id}')" class="text-slate-500 hover:text-red-400 text-xs">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                    <div>
-                        <div class="text-[11px] text-slate-400">Баланс:</div>
-                        <div class="flex items-center space-x-1">
-                            <input type="number" value="${card.balance}" onchange="updateCardBalance('${card.id}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-sm font-bold text-emerald-400 focus:outline-none focus:border-blue-500">
-                            <span class="text-xs text-slate-400 font-bold">₴</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(cardEl);
-            });
-
-            document.getElementById('totalUahCardsBalance').innerText = formatNum(totalUah, 2) + ' ₴';
-        }
-
-        // Populate card dropdown selectors
-        function renderCardDropdowns() {
-            const selects = ['buyCardSelect', 'sellCardSelect', 'bundleCardFrom', 'bundleCardTo'];
-            selects.forEach(id => {
-                const sel = document.getElementById(id);
-                if (!sel) return;
-                const prevVal = sel.value;
-                sel.innerHTML = '';
-                appState.cards.forEach(card => {
-                    const opt = document.createElement('option');
-                    opt.value = card.id;
-                    opt.innerText = `${card.name} (${formatNum(card.balance, 0)} ₴)`;
-                    sel.appendChild(opt);
-                });
-                if (prevVal) sel.value = prevVal;
-            });
-        }
-
-        // Render PnL Summaries (Day, Week, Month)
-        function renderSummaryCards() {
-            const now = new Date();
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-            const dayOfWeek = now.getDay() || 7;
-            const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1).getTime();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-            let dayPnL = 0, dayCount = 0, dayVol = 0;
-            let weekPnL = 0, weekCount = 0, weekVol = 0;
-            let monthPnL = 0, monthCount = 0, monthVol = 0;
-
-            appState.transactions.forEach(tx => {
-                const txTime = new Date(tx.timestamp).getTime();
-                const pnl = Number(tx.pnl || 0);
-                const vol = Number(tx.uahAmount || 0);
-
-                if (txTime >= startOfDay) {
-                    dayPnL += pnl;
-                    dayCount++;
-                    dayVol += vol;
-                }
-                if (txTime >= startOfWeek) {
-                    weekPnL += pnl;
-                    weekCount++;
-                    weekVol += vol;
-                }
-                if (txTime >= startOfMonth) {
-                    monthPnL += pnl;
-                    monthCount++;
-                    monthVol += vol;
-                }
-            });
-
-            updatePnLCard('pnlDayText', 'pnlDayCount', 'pnlDayVol', dayPnL, dayCount, dayVol);
-            updatePnLCard('pnlWeekText', 'pnlWeekCount', 'pnlWeekVol', weekPnL, weekCount, weekVol);
-            updatePnLCard('pnlMonthText', 'pnlMonthCount', 'pnlMonthVol', monthPnL, monthCount, monthVol);
-        }
-
-        function updatePnLCard(textId, countId, volId, pnl, count, vol) {
-            const el = document.getElementById(textId);
-            document.getElementById(countId).innerText = count;
-            document.getElementById(volId).innerText = formatNum(vol, 0) + ' ₴';
-
-            const sign = pnl >= 0 ? '+' : '';
-            el.innerText = `${sign}${formatNum(pnl, 2)} ₴`;
-            if (pnl > 0) {
-                el.className = 'text-2xl font-bold tracking-tight text-emerald-400';
-            } else if (pnl < 0) {
-                el.className = 'text-2xl font-bold tracking-tight text-red-400';
-            } else {
-                el.className = 'text-2xl font-bold tracking-tight text-slate-300';
-            }
-        }
-
-        // Render Analytics Overview
-        function renderAnalytics() {
-            let totalTrades = appState.transactions.length;
-            let boughtUsdt = 0;
-            let soldUsdt = 0;
-            let totalPnl = 0;
-
-            appState.transactions.forEach(t => {
-                if (t.type === 'buy') boughtUsdt += Number(t.usdtAmount || 0);
-                if (t.type === 'sell') soldUsdt += Number(t.usdtAmount || 0);
-                if (t.type === 'bundle') {
-                    boughtUsdt += Number(t.usdtAmount || 0);
-                    soldUsdt += Number(t.usdtAmount || 0);
-                }
-                totalPnl += Number(t.pnl || 0);
-            });
-
-            document.getElementById('statTotalTrades').innerText = totalTrades;
-            document.getElementById('statTotalUsdtBought').innerText = formatNum(boughtUsdt, 2) + ' USDT';
-            document.getElementById('statTotalUsdtSold').innerText = formatNum(soldUsdt, 2) + ' USDT';
-
-            const pnlEl = document.getElementById('statTotalAllTimePnl');
-            const sign = totalPnl >= 0 ? '+' : '';
-            pnlEl.innerText = `${sign}${formatNum(totalPnl, 2)} ₴`;
-            pnlEl.className = totalPnl >= 0 ? 'font-bold text-emerald-400 text-sm' : 'font-bold text-red-400 text-sm';
-        }
-
-        // TAB 1: Recalc Buy Trade
-        function recalcBuy() {
-            const uahSpent = parseFloat(document.getElementById('buyUahAmount').value) || 0;
-            const rate = parseFloat(document.getElementById('buyRate').value) || 0;
-            const bankFeeVal = parseFloat(document.getElementById('buyBankFee').value) || 0;
-            const exFeePct = parseFloat(document.getElementById('buyExFee').value) || 0;
-
-            let bankFeeUah = 0;
-            if (feeTypes.buyBank === 'uah') {
-                bankFeeUah = bankFeeVal;
-            } else {
-                bankFeeUah = uahSpent * (bankFeeVal / 100);
-            }
-
-            const totalSpent = uahSpent + bankFeeUah;
-            let netUsdt = 0;
-            let effectiveRate = 0;
-
-            if (rate > 0) {
-                const grossUsdt = uahSpent / rate;
-                netUsdt = grossUsdt * (1 - exFeePct / 100);
-                if (netUsdt > 0) {
-                    effectiveRate = totalSpent / netUsdt;
-                }
-            }
-
-            document.getElementById('buyTotalSpentText').innerText = formatNum(totalSpent, 2) + ' ₴';
-            document.getElementById('buyNetUsdtText').innerText = formatNum(netUsdt, 2) + ' USDT';
-            document.getElementById('buyEffectiveRateText').innerText = formatNum(effectiveRate, 2) + ' ₴/USDT';
-        }
-
-        // Execute Buy Trade
-        function executeBuy() {
-            const cardId = document.getElementById('buyCardSelect').value;
-            const uahSpent = parseFloat(document.getElementById('buyUahAmount').value) || 0;
-            const rate = parseFloat(document.getElementById('buyRate').value) || 0;
-            const bankFeeVal = parseFloat(document.getElementById('buyBankFee').value) || 0;
-            const exFeePct = parseFloat(document.getElementById('buyExFee').value) || 0;
-
-            if (uahSpent <= 0 || rate <= 0) {
-                alert('Пожалуйста, введите корректную сумму покупки и курс!');
-                return;
-            }
-
-            let bankFeeUah = feeTypes.buyBank === 'uah' ? bankFeeVal : uahSpent * (bankFeeVal / 100);
-            const totalSpentUah = uahSpent + bankFeeUah;
-            const grossUsdt = uahSpent / rate;
-            const netUsdt = grossUsdt * (1 - exFeePct / 100);
-
-            const card = appState.cards.find(c => c.id === cardId);
-            if (card) {
-                card.balance = Math.max(0, card.balance - totalSpentUah);
-            }
-
-            // Update USDT Cost Basis
-            const oldTotalCost = appState.usdtBalance * appState.avgBuyPrice;
-            const newTotalCost = oldTotalCost + totalSpentUah;
-            appState.usdtBalance += netUsdt;
-            if (appState.usdtBalance > 0) {
-                appState.avgBuyPrice = newTotalCost / appState.usdtBalance;
-            }
-
-            // Record transaction
-            appState.transactions.unshift({
-                id: 'tx_' + Date.now(),
-                type: 'buy',
-                timestamp: new Date().toISOString(),
-                cardName: card ? card.name : '—',
-                uahAmount: totalSpentUah,
-                usdtAmount: netUsdt,
-                buyRate: rate,
-                sellRate: null,
-                bankFeeDesc: feeTypes.buyBank === 'uah' ? `${bankFeeVal} ₴` : `${bankFeeVal}%`,
-                pnl: 0,
-                spreadPct: 0
-            });
-
-            saveState();
-            document.getElementById('buyUahAmount').value = '';
-            alert(`Успешно куплено ${formatNum(netUsdt, 2)} USDT!`);
-        }
-
-        // TAB 2: Recalc Sell Trade
-        function recalcSell() {
-            const usdtSell = parseFloat(document.getElementById('sellUsdtAmount').value) || 0;
-            const rate = parseFloat(document.getElementById('sellRate').value) || 0;
-            const exFeePct = parseFloat(document.getElementById('sellExFee').value) || 0;
-            const bankFeeVal = parseFloat(document.getElementById('sellBankFee').value) || 0;
-
-            const grossUah = usdtSell * rate;
-            const uahAfterEx = grossUah * (1 - exFeePct / 100);
-
-            let bankFeeUah = 0;
-            if (feeTypes.sellBank === 'uah') {
-                bankFeeUah = bankFeeVal;
-            } else {
-                bankFeeUah = uahAfterEx * (bankFeeVal / 100);
-            }
-
-            const netUah = Math.max(0, uahAfterEx - bankFeeUah);
-            const costBasis = usdtSell * (appState.avgBuyPrice || rate);
-            const pnl = netUah - costBasis;
-            const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
-
-            document.getElementById('sellNetUahText').innerText = formatNum(netUah, 2) + ' ₴';
-            document.getElementById('sellCostBasisText').innerText = formatNum(costBasis, 2) + ' ₴';
-
-            const pnlEl = document.getElementById('sellPnlText');
-            const sign = pnl >= 0 ? '+' : '';
-            pnlEl.innerText = `${sign}${formatNum(pnl, 2)} ₴ (${sign}${formatNum(pnlPct, 2)}%)`;
-            pnlEl.className = pnl >= 0 ? 'font-bold text-emerald-400 text-sm' : 'font-bold text-red-400 text-sm';
-        }
-
-        // Execute Sell Trade
-        function executeSell() {
-            const cardId = document.getElementById('sellCardSelect').value;
-            const usdtSell = parseFloat(document.getElementById('sellUsdtAmount').value) || 0;
-            const rate = parseFloat(document.getElementById('sellRate').value) || 0;
-            const exFeePct = parseFloat(document.getElementById('sellExFee').value) || 0;
-            const bankFeeVal = parseFloat(document.getElementById('sellBankFee').value) || 0;
-
-            if (usdtSell <= 0 || rate <= 0) {
-                alert('Пожалуйста, введите количество USDT и курс продажи!');
-                return;
-            }
-
-            const grossUah = usdtSell * rate;
-            const uahAfterEx = grossUah * (1 - exFeePct / 100);
-            let bankFeeUah = feeTypes.sellBank === 'uah' ? bankFeeVal : uahAfterEx * (bankFeeVal / 100);
-            const netUah = Math.max(0, uahAfterEx - bankFeeUah);
-
-            const card = appState.cards.find(c => c.id === cardId);
-            if (card) {
-                card.balance = Number(card.balance || 0) + netUah;
-            }
-
-            const costBasis = usdtSell * (appState.avgBuyPrice || rate);
-            const pnl = netUah - costBasis;
-            const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
-
-            appState.usdtBalance = Math.max(0, appState.usdtBalance - usdtSell);
-            if (appState.usdtBalance === 0) appState.avgBuyPrice = 0;
-
-            appState.transactions.unshift({
-                id: 'tx_' + Date.now(),
-                type: 'sell',
-                timestamp: new Date().toISOString(),
-                cardName: card ? card.name : '—',
-                uahAmount: netUah,
-                usdtAmount: usdtSell,
-                buyRate: appState.avgBuyPrice || rate,
-                sellRate: rate,
-                bankFeeDesc: feeTypes.sellBank === 'uah' ? `${bankFeeVal} ₴` : `${bankFeeVal}%`,
-                pnl: pnl,
-                spreadPct: pnlPct
-            });
-
-            saveState();
-            document.getElementById('sellUsdtAmount').value = '';
-            alert(`Успешно продано ${formatNum(usdtSell, 2)} USDT! Зачислено ${formatNum(netUah, 2)} ₴`);
-        }
-
-        // TAB 3: Recalc Bundle
-        function recalcBundle() {
-            const startUah = parseFloat(document.getElementById('bundleStartUah').value) || 0;
-            const buyRate = parseFloat(document.getElementById('bundleBuyRate').value) || 0;
-            const sellRate = parseFloat(document.getElementById('bundleSellRate').value) || 0;
-
-            const buyBankFeeVal = parseFloat(document.getElementById('bundleBuyBankFee').value) || 0;
-            const buyExFeePct = parseFloat(document.getElementById('bundleBuyExFee').value) || 0;
-            const sellExFeePct = parseFloat(document.getElementById('bundleSellExFee').value) || 0;
-            const sellBankFeeVal = parseFloat(document.getElementById('bundleSellBankFee').value) || 0;
-
-            let usdtObtained = 0;
-            let finalUah = 0;
-            let pnl = 0;
-            let spreadPct = 0;
-
-            if (startUah > 0 && buyRate > 0 && sellRate > 0) {
-                let buyBankFeeUah = feeTypes.bundleBuyBank === 'uah' ? buyBankFeeVal : startUah * (buyBankFeeVal / 100);
-                const uahForUsdt = Math.max(0, startUah - buyBankFeeUah);
-
-                const grossUsdt = uahForUsdt / buyRate;
-                usdtObtained = grossUsdt * (1 - buyExFeePct / 100);
-
-                const grossSellUah = usdtObtained * sellRate;
-                const uahAfterSellEx = grossSellUah * (1 - sellExFeePct / 100);
-
-                let sellBankFeeUah = feeTypes.bundleSellBank === 'uah' ? sellBankFeeVal : uahAfterSellEx * (sellBankFeeVal / 100);
-                finalUah = Math.max(0, uahAfterSellEx - sellBankFeeUah);
-
-                pnl = finalUah - startUah;
-                spreadPct = (pnl / startUah) * 100;
-            }
-
-            document.getElementById('bundleUsdtObtainedText').innerText = formatNum(usdtObtained, 2) + ' USDT';
-            document.getElementById('bundleFinalUahText').innerText = formatNum(finalUah, 2) + ' ₴';
-
-            const pnlEl = document.getElementById('bundlePnlText');
-            const sign = pnl >= 0 ? '+' : '';
-            pnlEl.innerText = `${sign}${formatNum(pnl, 2)} ₴ (${sign}${formatNum(spreadPct, 2)}%)`;
-            pnlEl.className = pnl >= 0 ? 'font-bold text-emerald-400 text-sm' : 'font-bold text-red-400 text-sm';
-        }
-
-        // Execute Bundle
-        function executeBundle() {
-            const cardFromId = document.getElementById('bundleCardFrom').value;
-            const cardToId = document.getElementById('bundleCardTo').value;
-            const startUah = parseFloat(document.getElementById('bundleStartUah').value) || 0;
-            const buyRate = parseFloat(document.getElementById('bundleBuyRate').value) || 0;
-            const sellRate = parseFloat(document.getElementById('bundleSellRate').value) || 0;
-
-            const buyBankFeeVal = parseFloat(document.getElementById('bundleBuyBankFee').value) || 0;
-            const buyExFeePct = parseFloat(document.getElementById('bundleBuyExFee').value) || 0;
-            const sellExFeePct = parseFloat(document.getElementById('bundleSellExFee').value) || 0;
-            const sellBankFeeVal = parseFloat(document.getElementById('bundleSellBankFee').value) || 0;
-
-            if (startUah <= 0 || buyRate <= 0 || sellRate <= 0) {
-                alert('Заполните стартовую сумму и оба курса для круга!');
-                return;
-            }
-
-            let buyBankFeeUah = feeTypes.bundleBuyBank === 'uah' ? buyBankFeeVal : startUah * (buyBankFeeVal / 100);
-            const uahForUsdt = Math.max(0, startUah - buyBankFeeUah);
-
-            const grossUsdt = uahForUsdt / buyRate;
-            const usdtObtained = grossUsdt * (1 - buyExFeePct / 100);
-
-            const grossSellUah = usdtObtained * sellRate;
-            const uahAfterSellEx = grossSellUah * (1 - sellExFeePct / 100);
-
-            let sellBankFeeUah = feeTypes.bundleSellBank === 'uah' ? sellBankFeeVal : uahAfterSellEx * (sellBankFeeVal / 100);
-            const finalUah = Math.max(0, uahAfterSellEx - sellBankFeeUah);
-
-            const pnl = finalUah - startUah;
-            const spreadPct = (pnl / startUah) * 100;
-
-            const cFrom = appState.cards.find(c => c.id === cardFromId);
-            const cTo = appState.cards.find(c => c.id === cardToId);
-
-            if (cFrom) cFrom.balance = Math.max(0, cFrom.balance - startUah);
-            if (cTo) cTo.balance = Number(cTo.balance || 0) + finalUah;
-
-            appState.transactions.unshift({
-                id: 'tx_' + Date.now(),
-                type: 'bundle',
-                timestamp: new Date().toISOString(),
-                cardName: `${cFrom ? cFrom.name : '?'} → ${cTo ? cTo.name : '?'}`,
-                uahAmount: startUah,
-                usdtAmount: usdtObtained,
-                buyRate: buyRate,
-                sellRate: sellRate,
-                pnl: pnl,
-                spreadPct: spreadPct
-            });
-
-            saveState();
-            document.getElementById('bundleStartUah').value = '';
-            alert(`Круг завершен! Прибыль: ${formatNum(pnl, 2)} ₴ (${formatNum(spreadPct, 2)}%)`);
-        }
-
-        // Render History Table
-        function renderHistory() {
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = '';
-
-            if (appState.transactions.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="py-6 text-center text-slate-500">
-                            История операций пуста. Зафиксируйте первую операцию.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            appState.transactions.forEach(tx => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-900/50 transition';
-
-                const dateStr = new Date(tx.timestamp).toLocaleString('ru-RU', {
-                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                });
-
-                let badge = '';
-                if (tx.type === 'buy') {
-                    badge = `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold">Покупка</span>`;
-                } else if (tx.type === 'sell') {
-                    badge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold">Продажа</span>`;
-                } else {
-                    badge = `<span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold">Круг</span>`;
-                }
-
-                const pnlVal = Number(tx.pnl || 0);
-                const sign = pnlVal >= 0 ? '+' : '';
-                const pnlClass = pnlVal > 0 ? 'text-emerald-400 font-bold' : pnlVal < 0 ? 'text-red-400 font-bold' : 'text-slate-400';
-
-                const ratesText = tx.sellRate ? `${formatNum(tx.buyRate, 2)} / ${formatNum(tx.sellRate, 2)} ₴` : `${formatNum(tx.buyRate, 2)} ₴`;
-
-                tr.innerHTML = `
-                    <td class="py-3 px-3 sm:px-4 text-slate-400 text-[11px]">${dateStr}</td>
-                    <td class="py-3 px-3 sm:px-4">${badge}</td>
-                    <td class="py-3 px-3 sm:px-4 font-medium text-slate-200">${escapeHtml(tx.cardName)}</td>
-                    <td class="py-3 px-3 sm:px-4 font-semibold text-white">${formatNum(tx.uahAmount, 2)} ₴</td>
-                    <td class="py-3 px-3 sm:px-4 font-medium text-amber-400">${formatNum(tx.usdtAmount, 2)} USDT</td>
-                    <td class="py-3 px-3 sm:px-4 text-slate-300">${ratesText}</td>
-                    <td class="py-3 px-3 sm:px-4 text-right ${pnlClass}">
-                        ${sign}${formatNum(pnlVal, 2)} ₴
-                        ${tx.spreadPct ? `<div class="text-[10px] opacity-80">(${sign}${formatNum(tx.spreadPct, 2)}%)</div>` : ''}
-                    </td>
-                    <td class="py-3 px-3 sm:px-4 text-center">
-                        <button onclick="deleteTransaction('${tx.id}')" class="text-slate-500 hover:text-red-400 transition p-1">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Delete individual transaction
-        function deleteTransaction(id) {
-            if (confirm('Удалить эту операцию из истории?')) {
-                appState.transactions = appState.transactions.filter(t => t.id !== id);
-                saveState();
-            }
-        }
-
-        // Clear All History
-        function clearHistory() {
-            if (confirm('Вы уверены, что хотите очистить всю историю сделок?')) {
-                appState.transactions = [];
-                saveState();
-            }
-        }
-
-        // Add Card Modal Controls
-        function openAddCardModal() {
-            document.getElementById('cardModal').classList.remove('hidden');
-        }
-        function closeAddCardModal() {
-            document.getElementById('cardModal').classList.add('hidden');
-            document.getElementById('modalCardName').value = '';
-            document.getElementById('modalCardBalance').value = '';
-        }
-        function saveNewCard() {
-            const name = document.getElementById('modalCardName').value.trim();
-            const bal = parseFloat(document.getElementById('modalCardBalance').value) || 0;
-
-            if (!name) {
-                alert('Введите название карты!');
-                return;
-            }
-
-            appState.cards.push({
-                id: 'c_' + Date.now(),
-                name: name,
-                balance: bal
-            });
-
-            closeAddCardModal();
-            saveState();
-        }
-
-        function deleteCard(id) {
-            if (appState.cards.length <= 1) {
-                alert('Должна остаться хотя бы одна карта!');
-                return;
-            }
-            if (confirm('Удалить эту карту?')) {
-                appState.cards = appState.cards.filter(c => c.id !== id);
-                saveState();
-            }
-        }
-
-        function updateCardBalance(id, val) {
-            const card = appState.cards.find(c => c.id === id);
-            if (card) {
-                card.balance = parseFloat(val) || 0;
-                saveState();
-            }
-        }
-
-        // Cloud Synchronization Engine
-        function openSyncModal() {
-            document.getElementById('syncModal').classList.remove('hidden');
-            const syncInput = document.getElementById('syncIdInput');
-            syncInput.value = appState.syncId || '';
-            renderQrCode();
-        }
-
-        function closeSyncModal() {
-            document.getElementById('syncModal').classList.add('hidden');
-        }
-
-        function updateSyncBanner() {
-            const banner = document.getElementById('syncActiveBanner');
-            const badgeText = document.getElementById('syncBadgeText');
-            const bannerId = document.getElementById('bannerSyncId');
-
-            if (appState.syncId) {
-                banner.classList.remove('hidden');
-                badgeText.innerText = 'Облако';
-                if (bannerId) bannerId.innerText = appState.syncId;
-            } else {
-                banner.classList.add('hidden');
-                badgeText.innerText = 'Локально';
-            }
-        }
-
-        function createNewSyncId() {
-            const newId = 'p2p_sync_' + Math.random().toString(36).substring(2, 10);
-            appState.syncId = newId;
-            document.getElementById('syncIdInput').value = newId;
-            saveState();
-            startCloudPolling();
-            renderQrCode();
-            alert(`Создан новый Sync ID: ${newId}\nИспользуйте его на других устройствах!`);
-        }
-
-        function connectExistingSyncId() {
-            const inputVal = document.getElementById('syncIdInput').value.trim();
-            if (!inputVal) {
-                alert('Введите Sync ID!');
-                return;
-            }
-
-            appState.syncId = inputVal;
-            saveState();
-            startCloudPolling();
-            pullStateFromCloud(true);
-            renderQrCode();
-        }
-
-        function copySyncId() {
-            const syncId = document.getElementById('syncIdInput').value;
-            if (!syncId) return;
-            navigator.clipboard.writeText(syncId).then(() => {
-                alert('Sync ID скопирован в буфер обмена!');
-            }).catch(() => {
-                const input = document.getElementById('syncIdInput');
-                input.select();
-                document.execCommand('copy');
-                alert('Sync ID скопирован!');
-            });
-        }
-
-        function renderQrCode() {
-            const qrContainer = document.getElementById('qrcodeContainer');
-            qrContainer.innerHTML = '';
-            if (!appState.syncId) {
-                qrContainer.innerHTML = '<span class="text-xs text-slate-400">Создайте Sync ID для QR-кода</span>';
-                return;
-            }
-
-            const currentUrl = window.location.href.split('?')[0];
-            const pairUrl = `${currentUrl}?syncId=${encodeURIComponent(appState.syncId)}`;
-
-            new QRCode(qrContainer, {
-                text: pairUrl,
-                width: 128,
-                height: 128,
-                colorDark: "#090d16",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-
-        // Push state to cloud relay
-        async function pushStateToCloud() {
-            if (!appState.syncId || isSyncing) return;
-            isSyncing = true;
-            try {
-                await fetch(CLOUD_API_BASE + appState.syncId, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(appState)
-                });
-            } catch (err) {
-                console.warn('Cloud sync push failed', err);
-            } finally {
-                isSyncing = false;
-            }
-        }
-
-        // Pull state from cloud relay
-        async function pullStateFromCloud(manualAlert = false) {
-            if (!appState.syncId) return;
-            try {
-                const resp = await fetch(CLOUD_API_BASE + appState.syncId);
-                if (resp.ok) {
-                    const remoteState = await resp.json();
-                    if (remoteState && Array.isArray(remoteState.cards)) {
-                        appState = remoteState;
-                        localStorage.setItem('p2p_calc_uah_state', JSON.stringify(appState));
-                        renderAll();
-                        if (manualAlert) alert('Данные из облака успешно синхронизированы!');
-                    }
-                }
-            } catch (err) {
-                console.warn('Cloud sync pull failed', err);
-            }
-        }
-
-        // Start periodic polling (every 6 seconds)
-        function startCloudPolling() {
-            if (syncTimer) clearInterval(syncTimer);
-            pullStateFromCloud();
-            syncTimer = setInterval(() => {
-                pullStateFromCloud();
-            }, 6000);
-        }
-
-        // Export JSON Backup
-        function exportBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `p2p_calc_backup_${new Date().toISOString().slice(0, 10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        // Import JSON Backup
-        function importBackup(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    const parsed = JSON.parse(event.target.result);
-                    if (parsed && Array.isArray(parsed.cards)) {
-                        appState = parsed;
-                        saveState();
-                        alert('Бэкап успешно загружен!');
-                    } else {
-                        alert('Неверный формат файла бэкапа!');
-                    }
-                } catch (err) {
-                    alert('Ошибка чтения файла бэкапа!');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Reset All Application Data
-        function confirmResetAll() {
-            if (confirm('Внимание! Это полностью сбросит все карты, балансы и историю. Продолжить?')) {
-                appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
-                saveState();
-            }
-        }
-
-        // Utility: Number formatting
-        function formatNum(num, decimals = 2) {
-            const val = Number(num || 0);
-            return val.toLocaleString('ru-RU', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            });
-        }
-
-        // Utility: Escape HTML
-        function escapeHtml(str) {
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-    </script>
-</body>
-</html>
-```
-
-
+    <!-- TRADE INPUT FORM & TABS -->
+    <div class="card-bg p-5 rounded-xl">
+      <!-- Tabs -->
+      <div class="flex border-b border-slate-700 pb-3 gap-2">
+        <button onclick="switchTab('cycle')" id="tab-cycle" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-blue-600 text-white">
+          Полный круг (Связка)
+        </button>
+        <button onclick="switchTab('buy')" id="tab-buy" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+          Покупка USDT
+        </button>
+        <button onclick="switchTab('sell')" id="tab-sell" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+          Продажа USDT
+        </button>
+      </div>
+
+      <!-- FORM: FULL CYCLE (КРУГ) -->
+      <div id="form-cycle" class="mt-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Сумма покупки (₴ UAH)</label>
+            <input type="number" id="c_uah_in" oninput="calcCycle()" placeholder="10000" class="w-full p-2.5 rounded-lg input-style font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Курс покупки (₴/USDT)</label>
+            <input type="number" step="0.01" id="c_buy_rate" oninput="calcCycle()" placeholder="41.20" class="w-full p-2.5 rounded-lg input-style font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Курс продажи (₴/USDT)</label>
+            <input type="number" step="0.01" id="c_sell_rate" oninput="calcCycle()" placeholder="41.85" class="w-full p-2.5 rounded-lg input-style font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Комиссия биржи (%)</label>
+            <input type="number" step="0.01" id="c_ex_fee" oninput="calcCycle()" value="0" placeholder="0.2" class="w-full p-2.5 rounded-lg input-style">
+          </div>
+        </div>
+
+        <!-- Bank Fee Block for Cycle -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 border-t border-slate-800">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-medium text-slate-400">Комиссия банка (Покупка)</label>
+              <div class="flex gap-1">
+                <button type="button" onclick="setFeeMode('c_buy_bank_mode', 'uah')" id="c_buy_bank_mode_uah" class="px-2 py-0.5 text-xs rounded bg-blue-600 text-white font-bold">₴</button>
+                <button type="button" onclick="setFeeMode('c_buy_bank_mode', 'pct')" id="c_buy_bank_mode_pct" class="px-2 py-0.5 text-xs rounded bg-slate-800 text-slate-400"> %</button>
+              </div>
+            </div>
+            <input type="number" step="0.1" id="c_buy_bank_fee" oninput="calcCycle()" value="0" placeholder="Например: 10 грн" class="w-full p-2.5 rounded-lg input-style">
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-medium text-slate-400">Комиссия банка (Продажа)</label>
+              <div class="flex gap-1">
+                <button type="button" onclick="setFeeMode('c_sell_bank_mode', 'uah')" id="c_sell_bank_mode_uah" class="px-2 py-0.5 text-xs rounded bg-blue-600 text-white font-bold">₴</button>
+                <button type="button" onclick="setFeeMode('c_sell_bank_mode', 'pct')" id="c_sell_bank_mode_pct" class="px-2 py-0.5 text-xs rounded bg-slate-800 text-slate-400"> %</button>
+              </div>
+            </div>
+            <input type="number" step="0.1" id="c_sell_bank_fee" oninput="calcCycle()" value="0" placeholder="Например: 0 грн" class="w-full p-2.5 rounded-lg input-style">
+          </div>
+        </div>
+
+        <!-- Live Calculation Preview -->
+        <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+          <div>
+            <div class="text-xs text-slate-400">Курс покупки / Себест.</div>
+            <div class="text-sm font-bold text-slate-200" id="c_preview_cost">0.00 / 0.00 ₴</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400">Получено USDT</div>
+            <div class="text-sm font-bold text-blue-400" id="c_preview_usdt">0.00 USDT</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400">Выручка (₴)</div>
+            <div class="text-sm font-bold text-slate-200" id="c_preview_out">0 ₴</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400">Чистая прибыль (Спред)</div>
+            <div class="text-sm font-black" id="c_preview_pnl">0 ₴ (0.00%)</div>
+          </div>
+        </div>
+
+        <button onclick="addCycleTrade()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl shadow-lg transition">
+          + Зафиксировать Круг
+        </button>
+      </div>
+
+      <!-- FORM: BUY USDT -->
+      <div id="form-buy" class="mt-4 space-y-4 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Сумма в гривнах (₴ UAH)</label>
+            <input type="number" id="b_uah_in" oninput="calcBuy()" placeholder="5000" class="w-full p-2.5 rounded-lg input-style font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Курс покупки (₴/USDT)</label>
+            <input type="number" step="0.01" id="b_rate" oninput="calcBuy()" placeholder="41.30" class="w-full p-2.5 rounded-lg input-style font-semibold">
+          </div>
+          <div>

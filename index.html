@@ -44,9 +44,12 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white pb-10">
 
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm"></div>
+
   <!-- Header -->
   <header class="glass-card border-b border-gray-800 sticky top-0 z-40 px-4 py-3">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-2">
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -58,9 +61,9 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button onclick="openSyncModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 border border-gray-700 text-indigo-300 transition shadow-sm">
+        <button onclick="openSyncModal()" id="cloudStatusBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-900/40 hover:bg-indigo-800/50 border border-indigo-500/30 text-indigo-300 transition shadow-sm">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>☁️ Облако (Sync)</span>
+          <span id="headerSyncLabel">☁️ Облако (Sync)</span>
         </button>
         <button onclick="exportData()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 transition" title="Экспорт JSON">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -98,7 +101,9 @@
         <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition"></div>
         <div class="flex justify-between items-center mb-3">
           <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Баланс USDT</span>
-          <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">Спот / Кошелек</span>
+          <button onclick="openEditUsdtModal()" class="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">
+            ✏️ Изменить
+          </button>
         </div>
         <div>
           <div class="text-2xl font-extrabold text-blue-400" id="usdtBalanceDisplay">0.00 USDT</div>
@@ -113,7 +118,9 @@
         <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
         <div class="flex justify-between items-center mb-3">
           <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Себестоимость USDT</span>
-          <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">С учетом комиссий</span>
+          <button onclick="openEditUsdtModal()" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 hover:bg-amber-500/30">
+            Редактировать
+          </button>
         </div>
         <div>
           <div class="text-2xl font-extrabold text-amber-400" id="avgBuyPriceDisplay">0.00 ₴</div>
@@ -345,7 +352,8 @@
               <th class="p-3">Курс сделки</th>
               <th class="p-3">Себестоимость</th>
               <th class="p-3">Объем USDT</th>
-              <th class="p-3">Сумма (₴)</th>
+              <th class="p-3 font-semibold text-emerald-400">Сумма контрагента (₴)</th>
+              <th class="p-3">Итог учета (₴)</th>
               <th class="p-3 text-right">Прибыль (PnL)</th>
               <th class="p-3 text-center">Действия</th>
             </tr>
@@ -364,10 +372,38 @@
     P2P Trading Calculator UAH Pro &bull; Надежный помощник в арбитраже
   </footer>
 
+  <!-- MODAL: EDIT USDT BALANCE -->
+  <div id="editUsdtModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-gray-800 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <h3 class="font-bold text-sm text-blue-400 flex items-center gap-2">
+          ✏️ Изменить баланс и себестоимость USDT
+        </h3>
+        <button onclick="closeEditUsdtModal()" class="text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Новый баланс USDT</label>
+          <input type="number" step="0.01" id="editUsdtValue" placeholder="Например: 500" class="w-full p-2.5 rounded-xl input-field text-sm font-bold text-blue-400">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Средняя себестоимость (₴ / USDT)</label>
+          <input type="number" step="0.01" id="editAvgPriceValue" placeholder="Например: 41.25" class="w-full p-2.5 rounded-xl input-field text-sm font-bold text-amber-400">
+        </div>
+      </div>
+
+      <div class="pt-2 flex gap-2 justify-end">
+        <button onclick="closeEditUsdtModal()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-xl text-gray-300">Отмена</button>
+        <button onclick="saveManualUsdt()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-white text-xs rounded-xl shadow">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CARDS MANAGEMENT -->
   <div id="cardModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-gray-800 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
         <h3 class="font-bold text-sm">Управление балансами карт (₴)</h3>
         <button onclick="closeCardModal()" class="text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
       </div>
@@ -387,7 +423,7 @@
   <!-- MODAL: CLOUD SYNC -->
   <div id="syncModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-gray-800 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
         <h3 class="font-bold text-sm flex items-center gap-2 text-indigo-300">
           ☁️ Синхронизация между устройствами
         </h3>
@@ -395,11 +431,11 @@
       </div>
 
       <p class="text-xs text-gray-400 leading-relaxed">
-        Введите этот уникальный **Sync ID** на телефоне и компьютере, чтобы ваши сделки и балансы обновлялись мгновенно на обоих устройствах!
+        Вставьте этот уникальный <strong class="text-gray-200">Sync ID</strong> на телефоне и ПК. Все новые сделки, балансы и изменения карт автоматически синхронизируются через интернет!
       </p>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-semibold text-gray-300">Ваш Sync ID:</label>
+        <label class="block text-xs font-semibold text-gray-300">Ваш текущий Sync ID:</label>
         <div class="flex gap-2">
           <input type="text" id="currentSyncIdInput" readonly class="flex-1 p-2.5 rounded-xl input-field font-mono text-xs text-indigo-400 font-bold">
           <button onclick="copySyncId()" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs rounded-xl text-gray-300">Копировать</button>
@@ -407,16 +443,19 @@
       </div>
 
       <div class="pt-2 border-t border-gray-800 space-y-1.5">
-        <label class="block text-xs font-semibold text-gray-300">Подключить чужой Sync ID:</label>
+        <label class="block text-xs font-semibold text-gray-300">Подключить другой Sync ID:</label>
         <div class="flex gap-2">
           <input type="text" id="connectSyncIdInput" placeholder="p2p_usr_..." class="flex-1 p-2.5 rounded-xl input-field font-mono text-xs">
           <button onclick="connectExistingSyncId()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow">Подключить</button>
         </div>
       </div>
 
-      <div class="pt-1">
-        <button onclick="generateNewSyncId()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs rounded-xl">
-          🔄 Сгенерировать новый ID
+      <div class="pt-1 flex gap-2">
+        <button onclick="generateNewSyncId()" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs rounded-xl">
+          🔄 Новая комната
+        </button>
+        <button onclick="forceSyncNow()" class="flex-1 py-2 bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-700 text-indigo-200 text-xs font-semibold rounded-xl">
+          ⚡ Синхронизировать сейчас
         </button>
       </div>
     </div>
@@ -432,7 +471,8 @@
       usdtBalance: 0,
       avgBuyPrice: 0,
       transactions: [],
-      syncId: localStorage.getItem('p2p_sync_id') || ('p2p_usr_' + Math.random().toString(36).substring(2, 11)),
+      syncId: localStorage.getItem('p2p_sync_id') || ('p2p_usr_' + Math.random().toString(36).substring(2, 10)),
+      lastUpdated: Date.now(),
       feeModes: {
         c_buy_bank_mode: 'uah',
         c_sell_bank_mode: 'uah',
@@ -442,6 +482,8 @@
     };
 
     let activeTab = 'cycle';
+    let isSyncing = false;
+    let syncInterval = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       loadLocalStorage();
@@ -449,7 +491,18 @@
       initCloudSync();
     });
 
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colors = type === 'error' ? 'bg-red-900/90 border-red-700 text-red-200' : 'bg-gray-900/90 border-indigo-500/50 text-indigo-200';
+      toast.className = `p-3 rounded-xl border ${colors} shadow-xl backdrop-blur-md text-xs font-semibold flex items-center justify-between gap-3 animate-bounce`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     function saveLocalStorage() {
+      state.lastUpdated = Date.now();
       localStorage.setItem('p2p_fiat_cards', JSON.stringify(state.cards));
       localStorage.setItem('p2p_usdt_balance', state.usdtBalance);
       localStorage.setItem('p2p_avg_buy_price', state.avgBuyPrice);
@@ -463,6 +516,7 @@
       const u = localStorage.getItem('p2p_usdt_balance'); if(u) state.usdtBalance = parseFloat(u);
       const a = localStorage.getItem('p2p_avg_buy_price'); if(a) state.avgBuyPrice = parseFloat(a);
       const t = localStorage.getItem('p2p_transactions'); if(t) state.transactions = JSON.parse(t);
+      const s = localStorage.getItem('p2p_sync_id'); if(s) state.syncId = s;
     }
 
     function switchTab(tab) {
@@ -494,6 +548,7 @@
       if(activeTab === 'sell') calcSell();
     }
 
+    // --- CALCULATIONS ---
     function calcCycle() {
       const uahIn = parseFloat(document.getElementById('c_uah_in').value) || 0;
       const buyRate = parseFloat(document.getElementById('c_buy_rate').value) || 0;
@@ -585,6 +640,7 @@
       pnlEl.className = `text-sm font-black mt-0.5 ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
     }
 
+    // --- TRANSACTIONS ---
     function addCycleTrade() {
       const uahIn = parseFloat(document.getElementById('c_uah_in').value) || 0;
       const buyRate = parseFloat(document.getElementById('c_buy_rate').value) || 0;
@@ -593,7 +649,7 @@
       const buyBankVal = parseFloat(document.getElementById('c_buy_bank_fee').value) || 0;
       const sellBankVal = parseFloat(document.getElementById('c_sell_bank_fee').value) || 0;
 
-      if(!uahIn || !buyRate || !sellRate) return customAlert("Заполните основные поля!");
+      if(!uahIn || !buyRate || !sellRate) return showToast("Заполните основные поля!", "error");
 
       const buyBankUah = state.feeModes.c_buy_bank_mode === 'uah' ? buyBankVal : (uahIn * buyBankVal / 100);
       const totalSpent = uahIn + buyBankUah;
@@ -610,6 +666,8 @@
         timestamp: new Date().toISOString(),
         buyRate, sellRate, costBasis,
         usdtAmount: usdtNet,
+        counterpartyUah: uahIn,
+        counterpartyOutUah: grossOut,
         uahSpent: totalSpent,
         uahReceived: netOut,
         pnl: profit
@@ -619,6 +677,7 @@
       renderAll();
       document.getElementById('c_uah_in').value = '';
       calcCycle();
+      showToast("Запись круга успешно добавлена!");
     }
 
     function addBuyTrade() {
@@ -627,7 +686,7 @@
       const exFee = parseFloat(document.getElementById('b_ex_fee').value) || 0;
       const bankVal = parseFloat(document.getElementById('b_bank_fee').value) || 0;
 
-      if(!uahIn || !rate) return customAlert("Заполните сумму и курс покупки!");
+      if(!uahIn || !rate) return showToast("Заполните сумму и курс покупки!", "error");
 
       const bankUah = state.feeModes.b_bank_mode === 'uah' ? bankVal : (uahIn * bankVal / 100);
       const totalSpent = uahIn + bankUah;
@@ -636,7 +695,7 @@
 
       const currentTotalCost = state.usdtBalance * state.avgBuyPrice;
       const newTotalUsdt = state.usdtBalance + usdtNet;
-      state.avgBuyPrice = (currentTotalCost + totalSpent) / newTotalUsdt;
+      state.avgBuyPrice = newTotalUsdt > 0 ? ((currentTotalCost + totalSpent) / newTotalUsdt) : rate;
       state.usdtBalance = newTotalUsdt;
 
       state.transactions.unshift({
@@ -646,6 +705,8 @@
         buyRate: rate,
         costBasis,
         usdtAmount: usdtNet,
+        counterpartyUah: uahIn,
+        counterpartyOutUah: 0,
         uahSpent: totalSpent,
         uahReceived: 0,
         pnl: 0
@@ -655,6 +716,7 @@
       renderAll();
       document.getElementById('b_uah_in').value = '';
       calcBuy();
+      showToast("Покупка зафиксирована, баланс USDT обновлен!");
     }
 
     function addSellTrade() {
@@ -663,7 +725,7 @@
       const exFee = parseFloat(document.getElementById('s_ex_fee').value) || 0;
       const bankVal = parseFloat(document.getElementById('s_bank_fee').value) || 0;
 
-      if(!usdtIn || !rate) return customAlert("Заполните объем USDT и курс продажи!");
+      if(!usdtIn || !rate) return showToast("Заполните объем USDT и курс продажи!", "error");
 
       const grossOut = (usdtIn * (1 - exFee / 100)) * rate;
       const bankUah = state.feeModes.s_bank_mode === 'uah' ? bankVal : (grossOut * bankVal / 100);
@@ -680,6 +742,8 @@
         sellRate: rate,
         costBasis: state.avgBuyPrice,
         usdtAmount: usdtIn,
+        counterpartyUah: grossOut,
+        counterpartyOutUah: grossOut,
         uahSpent: costSpent,
         uahReceived: netOut,
         pnl: profit
@@ -689,12 +753,14 @@
       renderAll();
       document.getElementById('s_usdt_in').value = '';
       calcSell();
+      showToast("Продажа зафиксирована, USDT списан!");
     }
 
     function deleteTx(id) {
       state.transactions = state.transactions.filter(t => t.id !== id);
       saveLocalStorage();
       renderAll();
+      showToast("Сделка удалена!");
     }
 
     function clearHistory() {
@@ -702,9 +768,33 @@
         state.transactions = [];
         saveLocalStorage();
         renderAll();
+        showToast("История очищена");
       }
     }
 
+    // --- MANUAL USDT EDITING ---
+    function openEditUsdtModal() {
+      document.getElementById('editUsdtValue').value = state.usdtBalance;
+      document.getElementById('editAvgPriceValue').value = state.avgBuyPrice.toFixed(2);
+      document.getElementById('editUsdtModal').classList.remove('hidden');
+    }
+    function closeEditUsdtModal() {
+      document.getElementById('editUsdtModal').classList.add('hidden');
+    }
+    function saveManualUsdt() {
+      const newUsdt = parseFloat(document.getElementById('editUsdtValue').value);
+      const newAvg = parseFloat(document.getElementById('editAvgPriceValue').value);
+
+      if(!isNaN(newUsdt)) state.usdtBalance = Math.max(0, newUsdt);
+      if(!isNaN(newAvg)) state.avgBuyPrice = Math.max(0, newAvg);
+
+      saveLocalStorage();
+      renderAll();
+      closeEditUsdtModal();
+      showToast("Баланс USDT и себестоимость сохранены!");
+    }
+
+    // --- RENDER ---
     function renderAll() {
       const totalUah = state.cards.reduce((acc, c) => acc + (parseFloat(c.balance) || 0), 0);
       document.getElementById('totalUahDisplay').innerText = `${Math.round(totalUah).toLocaleString()} ₴`;
@@ -713,6 +803,8 @@
       document.getElementById('usdtBalanceDisplay').innerText = `${state.usdtBalance.toFixed(2)} USDT`;
       document.getElementById('usdtInUahDisplay').innerText = `${Math.round(state.usdtBalance * state.avgBuyPrice).toLocaleString()} ₴`;
       document.getElementById('avgBuyPriceDisplay').innerText = `${state.avgBuyPrice.toFixed(2)} ₴`;
+
+      document.getElementById('headerSyncLabel').innerText = `☁️ Sync (${state.syncId.slice(0, 10)}...)`;
 
       const now = new Date();
       let pnlDay = 0, countDay = 0;
@@ -732,33 +824,44 @@
 
       const historyList = document.getElementById('tradeHistoryList');
       if(state.transactions.length === 0) {
-        historyList.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">История сделок пуста</td></tr>`;
+        historyList.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500">История сделок пуста</td></tr>`;
         return;
       }
 
       historyList.innerHTML = state.transactions.map(t => {
         const timeStr = new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = new Date(t.timestamp).toLocaleDateString([], { month: '2-digit', day: '2-digit' });
+        
         let badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">КРУГ</span>`;
         if(t.type === 'BUY') badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">ПОКУПКА</span>`;
         if(t.type === 'SELL') badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">ПРОДАЖА</span>`;
 
         const rateStr = t.type === 'CYCLE' ? `${t.buyRate.toFixed(2)} / ${t.sellRate.toFixed(2)} ₴` : `${(t.buyRate || t.sellRate).toFixed(2)} ₴`;
 
+        // Counterparty amount (exact fiat value sent or received)
+        let cpAmountStr = "—";
+        if(t.type === 'CYCLE') {
+          cpAmountStr = `${Math.round(t.counterpartyUah || 0).toLocaleString()} ₴ ➔ ${Math.round(t.counterpartyOutUah || 0).toLocaleString()} ₴`;
+        } else if(t.counterpartyUah) {
+          cpAmountStr = `${Math.round(t.counterpartyUah).toLocaleString()} ₴`;
+        }
+
         return `
           <tr class="hover:bg-gray-800/40 transition">
             <td class="p-3">
-              <div class="font-semibold text-gray-200">${timeStr}</div>
+              <div class="font-semibold text-gray-200">${timeStr} <span class="text-[10px] text-gray-500">${dateStr}</span></div>
               <div class="mt-0.5">${badge}</div>
             </td>
             <td class="p-3 font-medium text-gray-300">${rateStr}</td>
-            <td class="p-3 font-semibold text-amber-400">${t.costBasis.toFixed(2)} ₴</td>
+            <td class="p-3 font-semibold text-amber-400">${(t.costBasis || 0).toFixed(2)} ₴</td>
             <td class="p-3 font-medium text-blue-400">${t.usdtAmount.toFixed(2)} USDT</td>
+            <td class="p-3 font-bold text-emerald-400">${cpAmountStr}</td>
             <td class="p-3 font-medium text-gray-300">${Math.round(t.uahSpent || t.uahReceived).toLocaleString()} ₴</td>
             <td class="p-3 text-right font-black ${t.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">
               ${t.type === 'BUY' ? '—' : (t.pnl > 0 ? '+' : '') + Math.round(t.pnl).toLocaleString() + ' ₴'}
             </td>
             <td class="p-3 text-center">
-              <button onclick="deleteTx(${t.id})" class="text-gray-500 hover:text-red-400 transition"><svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+              <button onclick="deleteTx(${t.id})" class="text-gray-500 hover:text-red-400 transition" title="Удалить"><svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
             </td>
           </tr>
         `;
@@ -805,45 +908,105 @@
       saveLocalStorage(); renderCardList(); renderAll();
     }
 
-    // CLOUD SYNC
+    // --- ENHANCED CLOUD SYNC (P2P REALTIME RELAY VIA KV API) ---
+    const CLOUD_API_BASE = 'https://keyvalue.imkey.store/api/v1/key';
+
     function openSyncModal() {
       document.getElementById('currentSyncIdInput').value = state.syncId;
       document.getElementById('syncModal').classList.remove('hidden');
     }
     function closeSyncModal() { document.getElementById('syncModal').classList.add('hidden'); }
+    
     function copySyncId() {
-      navigator.clipboard.writeText(state.syncId);
-      customAlert("Sync ID скопирован!");
+      const el = document.getElementById('currentSyncIdInput');
+      el.select();
+      document.execCommand('copy');
+      showToast("Sync ID скопирован!");
     }
+    
     function generateNewSyncId() {
-      state.syncId = 'p2p_usr_' + Math.random().toString(36).substring(2, 11);
-      saveLocalStorage(); openSyncModal();
+      state.syncId = 'p2p_usr_' + Math.random().toString(36).substring(2, 10);
+      saveLocalStorage();
+      openSyncModal();
+      renderAll();
+      showToast("Создана новая облачная комната!");
     }
+
     function connectExistingSyncId() {
       const id = document.getElementById('connectSyncIdInput').value.trim();
-      if(!id) return;
+      if(!id) return showToast("Введите Sync ID", "error");
       state.syncId = id;
-      saveLocalStorage(); closeSyncModal();
-      customAlert("Подключено к Sync ID: " + id);
-      pullCloudSync();
+      saveLocalStorage();
+      closeSyncModal();
+      renderAll();
+      pullCloudSync(true);
     }
-    function pushCloudSync() {
-      localStorage.setItem(`cloud_payload_${state.syncId}`, JSON.stringify({
-        cards: state.cards, usdtBalance: state.usdtBalance, avgBuyPrice: state.avgBuyPrice, transactions: state.transactions, updatedAt: Date.now()
-      }));
+
+    function forceSyncNow() {
+      pushCloudSync();
+      pullCloudSync(true);
     }
-    function pullCloudSync() {
-      const raw = localStorage.getItem(`cloud_payload_${state.syncId}`);
-      if(raw) {
-        try {
-          const p = JSON.parse(raw);
-          state.cards = p.cards; state.usdtBalance = p.usdtBalance; state.avgBuyPrice = p.avgBuyPrice; state.transactions = p.transactions;
-          renderAll();
-        } catch(e){}
+
+    async function pushCloudSync() {
+      if(!state.syncId || isSyncing) return;
+      try {
+        const payload = {
+          cards: state.cards,
+          usdtBalance: state.usdtBalance,
+          avgBuyPrice: state.avgBuyPrice,
+          transactions: state.transactions,
+          lastUpdated: state.lastUpdated || Date.now()
+        };
+        await fetch(`${CLOUD_API_BASE}/${state.syncId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+      } catch(e) {
+        console.warn("Cloud sync push fallback:", e);
       }
     }
-    function initCloudSync() { setInterval(pullCloudSync, 4000); }
 
+    async function pullCloudSync(forceAlert = false) {
+      if(!state.syncId || isSyncing) return;
+      isSyncing = true;
+      try {
+        const res = await fetch(`${CLOUD_API_BASE}/${state.syncId}`);
+        if(res.ok) {
+          const raw = await res.text();
+          if(raw) {
+            const remote = JSON.parse(raw);
+            if(remote && remote.lastUpdated > (state.lastUpdated || 0)) {
+              state.cards = remote.cards || [];
+              state.usdtBalance = remote.usdtBalance || 0;
+              state.avgBuyPrice = remote.avgBuyPrice || 0;
+              state.transactions = remote.transactions || [];
+              state.lastUpdated = remote.lastUpdated;
+
+              localStorage.setItem('p2p_fiat_cards', JSON.stringify(state.cards));
+              localStorage.setItem('p2p_usdt_balance', state.usdtBalance);
+              localStorage.setItem('p2p_avg_buy_price', state.avgBuyPrice);
+              localStorage.setItem('p2p_transactions', JSON.stringify(state.transactions));
+              
+              renderAll();
+              if(forceAlert) showToast("Данные успешно синхронизированы из облака!");
+            }
+          }
+        }
+      } catch(e) {
+        console.warn("Cloud sync pull issue:", e);
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    function initCloudSync() {
+      pullCloudSync();
+      if(syncInterval) clearInterval(syncInterval);
+      syncInterval = setInterval(() => pullCloudSync(), 3000);
+    }
+
+    // --- EXPORT & IMPORT ---
     function exportData() {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -851,6 +1014,7 @@
       a.download = `p2p_backup_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
     }
+
     function importData(e) {
       const file = e.target.files[0];
       if(!file) return;
@@ -862,14 +1026,12 @@
           if(d.usdtBalance !== undefined) state.usdtBalance = d.usdtBalance;
           if(d.avgBuyPrice !== undefined) state.avgBuyPrice = d.avgBuyPrice;
           if(d.transactions) state.transactions = d.transactions;
-          saveLocalStorage(); renderAll();
-          customAlert("Данные успешно импортированы!");
-        } catch(err) { customAlert("Ошибка чтения файла!"); }
+          saveLocalStorage();
+          renderAll();
+          showToast("Данные успешно импортированы!");
+        } catch(err) { showToast("Ошибка чтения файла!", "error"); }
       };
       reader.readAsText(file);
-    }
-    function customAlert(msg) {
-      console.log(msg);
     }
   </script>
 </body>
